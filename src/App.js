@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
@@ -5,11 +6,7 @@ import Player from './components/Player';
 import Table from './components/Table';
 import { evaluateHand } from './utils/combinations';
 
-const socket = io(
-  window.location.hostname.includes('vercel.app') || window.location.hostname.includes('busle.vercel.app')
-    ? 'https://busle.onrender.com'
-    : 'http://localhost:4000'
-);
+const socket = io('https://busle.onrender.com');
 
 function App() {
   const [playerName, setPlayerName] = useState('');
@@ -23,39 +20,28 @@ function App() {
   const [fase, setFase] = useState('esperando');
   const [descartesUsados, setDescartesUsados] = useState([false, false]);
   const [ganador, setGanador] = useState(null);
+  const [jugadorQueAposto, setJugadorQueAposto] = useState(null);
+  const [pendientesPorResponder, setPendientesPorResponder] = useState([0, 1]);
 
   useEffect(() => {
-    if (window.Telegram) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+    tg?.expand();
 
-      const checkUser = () => {
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-          const nombre = user.username || user.first_name;
-          setPlayerName(nombre);
-          console.log('📲 Nombre detectado desde Telegram:', nombre);
-          socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
-        } else {
-          const fallbackName = prompt("Ingresa tu nombre:");
-          if (fallbackName) {
-            setPlayerName(fallbackName);
-            console.log('📝 Nombre ingresado manualmente:', fallbackName);
-            socket.emit('join-room', { roomId: 'sala-busle', name: fallbackName });
-          } else {
-            alert("No se detectó el usuario y no se ingresó nombre");
-          }
-        }
-      };
-
-      setTimeout(checkUser, 300);
+    const user = tg?.initDataUnsafe?.user;
+    if (user) {
+      const nombre = user.username || user.first_name || '';
+      setPlayerName(nombre);
+      socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
+    } else {
+      const nombre = prompt("Ingresa tu nombre para jugar:") || `Invitado-${Math.floor(Math.random()*1000)}`;
+      setPlayerName(nombre);
+      socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
     }
   }, []);
 
   useEffect(() => {
     socket.on('game-started', (roomState) => {
-      console.log('🎮 Juego iniciado:', roomState);
       const { players: manos, communityCards: comunes, deck: mazoRestante } = roomState;
       setDeck(mazoRestante);
       setPlayers(manos);
@@ -67,10 +53,12 @@ function App() {
       setDescartesUsados([false, false]);
       setFase('apuestas');
       setGanador(null);
+      setJugadorQueAposto(null);
+      setPendientesPorResponder([0, 1]);
     });
 
     socket.on('room-update', (roomState) => {
-      console.log('🔁 Estado actualizado:', roomState);
+      console.log('Estado actualizado:', roomState);
       setPlayers(roomState.players || []);
     });
 
@@ -79,68 +67,10 @@ function App() {
     };
   }, []);
 
-  const hacerAccion = (tipo) => {
-    const playerIndex = players.findIndex(p => p.name === playerName);
-    if (playerIndex === -1) return;
-    socket.emit('player-action', { roomId: 'sala-busle', playerId: playerIndex, action: tipo });
-  };
-
-  const discardCards = (index, indices) => {
-    if (fase !== 'descartes' || descartesUsados[index] || !jugadoresActivos[index]) return;
-    const nuevoDeck = [...deck];
-    const nuevasManos = [...players];
-    indices.forEach(i => {
-      nuevasManos[index][i] = nuevoDeck.pop();
-    });
-    const nuevosDescartes = [...descartesUsados];
-    nuevosDescartes[index] = true;
-    setPlayers(nuevasManos);
-    setDeck(nuevoDeck);
-    setDescartesUsados(nuevosDescartes);
-  };
-
-  const pasarDescartes = (index) => {
-    if (fase !== 'descartes' || descartesUsados[index] || !jugadoresActivos[index]) return;
-    const nuevosDescartes = [...descartesUsados];
-    nuevosDescartes[index] = true;
-    setDescartesUsados(nuevosDescartes);
-  };
-
-  const siguienteRonda = () => {
-    if (round < 3) {
-      setRound(round + 1);
-      setAcciones([null, null]);
-      setFase('apuestas');
-      setDescartesUsados([false, false]);
-      setTurnoActual(jugadoresActivos.findIndex(j => j));
-    } else {
-      evaluarGanador();
-    }
-  };
-
-  const evaluarGanador = () => {
-    const resultados = players.map((cartas, i) =>
-      jugadoresActivos[i] ? evaluateHand(cartas, tableCards, round) : { rank: -1, name: 'Retirado' }
-    );
-    let mejor = resultados[0];
-    let ganadorIndex = 0;
-    for (let i = 1; i < resultados.length; i++) {
-      if (
-        resultados[i].rank > mejor.rank ||
-        (resultados[i].rank === mejor.rank && resultados[i].rank === 1 && resultados[i].high > mejor.high)
-      ) {
-        mejor = resultados[i];
-        ganadorIndex = i;
-      }
-    }
-    setGanador(`Ganador: Jugador ${ganadorIndex + 1} con ${mejor.name}`);
-  };
-
   if (players.length < 2) {
     return (
       <div className="App">
         <h2>Esperando jugadores... ({players.length}/2)</h2>
-        <p>Conectado como: <strong>{playerName}</strong></p>
       </div>
     );
   }
@@ -160,45 +90,9 @@ function App() {
 
         <div className="jugador jugador1">
           <h3>{playerName}</h3>
-          {
-            (() => {
-              const playerIndex = players.findIndex(p => p.name === playerName);
-              return <Player cards={players[playerIndex]} playerNumber={playerIndex + 1} />;
-            })()
-          }
-
-          {
-            (() => {
-              const playerIndex = players.findIndex(p => p.name === playerName);
-              return jugadoresActivos[playerIndex] && fase === 'apuestas' && turnoActual === playerIndex;
-            })() && (
-            <div className="botones">
-              {!acciones.includes('apostó') && <button onClick={() => hacerAccion('pasó')}>Pasar</button>}
-              <button onClick={() => hacerAccion('apostó')}>Apostar</button>
-              {acciones.includes('apostó') && <button onClick={() => hacerAccion('igualó')}>Igualar</button>}
-              <button onClick={() => hacerAccion('retirado')}>Retirarse</button>
-            </div>
-          )}
-
-          {
-            (() => {
-              const playerIndex = players.findIndex(p => p.name === playerName);
-              return jugadoresActivos[playerIndex] && fase === 'descartes';
-            })() && (
-            <div className="botones">
-              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [0])}>Descartar Carta 1</button>
-              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [1])}>Descartar Carta 2</button>
-              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [0, 1])}>Descartar Ambas</button>
-              <button onClick={() => pasarDescartes(players.findIndex(p => p.name === playerName))}>Pasar</button>
-            </div>
-          )}
+          <Player cards={players[0]} playerNumber={1} />
         </div>
       </div>
-
-      {fase === 'descartes' && descartesUsados.every((d, i) => !jugadoresActivos[i] || d) && (
-        <button onClick={siguienteRonda}>Siguiente Ronda</button>
-      )}
-
       {ganador && <h2>{ganador}</h2>}
     </div>
   );
