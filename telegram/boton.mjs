@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 const TELEGRAM_BOT_TOKEN = '7714832917:AAHSS31bYDgSzxp8sgDURC8Cw6ZsRyx-ceg';
 const CHAT_ID = '5942857815';
 
