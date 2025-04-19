@@ -1,0 +1,54 @@
+.card {
+    width: 80px;
+    height: 120px;
+    border-radius: 10px;
+    border: 2px solid #333;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    background-color: white;
+    position: relative;
+    margin: 4px;
+    font-family: 'Arial Black', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px;
+    color: black;
+  }
+  
+  .card-value {
+    font-size: 18px;
+  }
+  
+  .card-value.top {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+  }
+  
+  .card-value.bottom {
+    position: absolute;
+    bottom: 5px;
+    right: 6px;
+  }
+  
+  .card-suit {
+    font-size: 32px;
+    line-height: 1;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  
+  .card.hearts, .card.diamonds {
+    color: red;
+  }
+  
+  .card.clubs, .card.spades {
+    color: black;
+  }
+  
+  .card.back {
+    background-color: #444;
+    background-image: radial-gradient(#666 20%, transparent 20%);
+    background-size: 10px 10px;
+  }
