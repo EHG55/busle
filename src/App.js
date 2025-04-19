@@ -81,18 +81,23 @@ function App() {
       <div className="mesa">
         <div className="jugador jugador2">
           <h3>Jugador 2</h3>
-          {players[1] && <Player cards={players[1]} playerNumber={2} />}
+          {players[1]?.hand?.length === 2 && <Player cards={players[1].hand} playerNumber={2} />}
         </div>
 
         <div className="cartas-comunes">
-          <Table cards={tableCards} />
+          {tableCards?.length === 3 ? (
+            <Table cards={tableCards} />
+          ) : (
+            <p>Cargando cartas comunes...</p>
+          )}
         </div>
 
         <div className="jugador jugador1">
           <h3>{playerName}</h3>
-          {players[0] && <Player cards={players[0]} playerNumber={1} />}
+          {players[0]?.hand?.length === 2 && <Player cards={players[0].hand} playerNumber={1} />}
         </div>
       </div>
+      <pre style={{ textAlign: 'left', padding: '1em' }}>{JSON.stringify(players, null, 2)}</pre>
       {ganador && <h2>{ganador}</h2>}
     </div>
   );
