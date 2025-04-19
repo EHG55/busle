@@ -26,15 +26,21 @@ function App() {
   useEffect(() => {
     if (window.Telegram) {
       const tg = window.Telegram.WebApp;
+      tg.ready();
       tg.expand();
 
-      if (tg.initDataUnsafe?.user) {
-        const nombre = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name;
-        setPlayerName(nombre);
-        socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
-      } else {
-        console.log("No se detectó usuario de Telegram");
-      }
+      const checkUser = () => {
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+          const nombre = user.username || user.first_name;
+          setPlayerName(nombre);
+          socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
+        } else {
+          console.log("No se detectó usuario de Telegram");
+        }
+      };
+
+      setTimeout(checkUser, 300);
     }
   }, []);
 
