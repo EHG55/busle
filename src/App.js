@@ -36,7 +36,13 @@ function App() {
           setPlayerName(nombre);
           socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
         } else {
-          console.log("No se detectó usuario de Telegram");
+          const fallbackName = prompt("Ingresa tu nombre:");
+          if (fallbackName) {
+            setPlayerName(fallbackName);
+            socket.emit('join-room', { roomId: 'sala-busle', name: fallbackName });
+          } else {
+            alert("No se detectó el usuario y no se ingresó nombre");
+          }
         }
       };
 
@@ -101,9 +107,9 @@ function App() {
   const siguienteRonda = () => {
     if (round < 3) {
       setRound(round + 1);
-      setAcciones([null, null, null]);
+      setAcciones([null, null]);
       setFase('apuestas');
-      setDescartesUsados([false, false, false]);
+      setDescartesUsados([false, false]);
       setTurnoActual(jugadoresActivos.findIndex(j => j));
       setJugadorQueAposto(null);
       setPendientesPorResponder(jugadoresActivos.map((act, i) => act ? i : null).filter(i => i !== null));
