@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
@@ -6,8 +5,11 @@ import Player from './components/Player';
 import Table from './components/Table';
 import { evaluateHand } from './utils/combinations';
 
-const socket = io('https://busle.onrender.com');
-
+const socket = io(
+  window.location.hostname.includes('vercel.app') || window.location.hostname.includes('busle.vercel.app')
+    ? 'https://busle.onrender.com'
+    : 'http://localhost:4000'
+);
 
 function App() {
   const [playerName, setPlayerName] = useState('');
@@ -21,8 +23,6 @@ function App() {
   const [fase, setFase] = useState('esperando');
   const [descartesUsados, setDescartesUsados] = useState([false, false]);
   const [ganador, setGanador] = useState(null);
-  const [jugadorQueAposto, setJugadorQueAposto] = useState(null);
-  const [pendientesPorResponder, setPendientesPorResponder] = useState([0, 1]);
 
   useEffect(() => {
     if (window.Telegram) {
@@ -35,11 +35,13 @@ function App() {
         if (user) {
           const nombre = user.username || user.first_name;
           setPlayerName(nombre);
+          console.log('📲 Nombre detectado desde Telegram:', nombre);
           socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
         } else {
           const fallbackName = prompt("Ingresa tu nombre:");
           if (fallbackName) {
             setPlayerName(fallbackName);
+            console.log('📝 Nombre ingresado manualmente:', fallbackName);
             socket.emit('join-room', { roomId: 'sala-busle', name: fallbackName });
           } else {
             alert("No se detectó el usuario y no se ingresó nombre");
@@ -53,6 +55,7 @@ function App() {
 
   useEffect(() => {
     socket.on('game-started', (roomState) => {
+      console.log('🎮 Juego iniciado:', roomState);
       const { players: manos, communityCards: comunes, deck: mazoRestante } = roomState;
       setDeck(mazoRestante);
       setPlayers(manos);
@@ -64,12 +67,10 @@ function App() {
       setDescartesUsados([false, false]);
       setFase('apuestas');
       setGanador(null);
-      setJugadorQueAposto(null);
-      setPendientesPorResponder([0, 1]);
     });
 
     socket.on('room-update', (roomState) => {
-      console.log('Estado actualizado:', roomState);
+      console.log('🔁 Estado actualizado:', roomState);
       setPlayers(roomState.players || []);
     });
 
@@ -112,8 +113,6 @@ function App() {
       setFase('apuestas');
       setDescartesUsados([false, false]);
       setTurnoActual(jugadoresActivos.findIndex(j => j));
-      setJugadorQueAposto(null);
-      setPendientesPorResponder(jugadoresActivos.map((act, i) => act ? i : null).filter(i => i !== null));
     } else {
       evaluarGanador();
     }
@@ -137,7 +136,14 @@ function App() {
     setGanador(`Ganador: Jugador ${ganadorIndex + 1} con ${mejor.name}`);
   };
 
-  if (players.length < 2) return <div className="App"><h2>Esperando jugadores... ({players.length}/2)</h2></div>;
+  if (players.length < 2) {
+    return (
+      <div className="App">
+        <h2>Esperando jugadores... ({players.length}/2)</h2>
+        <p>Conectado como: <strong>{playerName}</strong></p>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
@@ -150,11 +156,6 @@ function App() {
 
         <div className="cartas-comunes">
           <Table cards={tableCards} />
-        </div>
-
-        <div className="jugador jugador3">
-          <h3>Jugador 3</h3>
-          <Player cards={players[2]} playerNumber={3} />
         </div>
 
         <div className="jugador jugador1">
@@ -185,31 +186,12 @@ function App() {
               return jugadoresActivos[playerIndex] && fase === 'descartes';
             })() && (
             <div className="botones">
-              {(() => {
-                const playerIndex = players.findIndex(p => p.name === playerName);
-                return <button disabled={descartesUsados[playerIndex]} onClick={() => discardCards(playerIndex, [0])}>Descartar Carta 1</button>;
-              })()}
-              {(() => {
-                const playerIndex = players.findIndex(p => p.name === playerName);
-                return <button disabled={descartesUsados[playerIndex]} onClick={() => discardCards(playerIndex, [1])}>Descartar Carta 2</button>;
-              })()}
-              {(() => {
-                const playerIndex = players.findIndex(p => p.name === playerName);
-                return <button disabled={descartesUsados[playerIndex]} onClick={() => discardCards(playerIndex, [0, 1])}>Descartar Ambas</button>;
-              })()}
-              {(() => {
-                const playerIndex = players.findIndex(p => p.name === playerName);
-                return <button disabled={descartesUsados[playerIndex]} onClick={() => pasarDescartes(playerIndex)}>Pasar</button>;
-              })()}
+              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [0])}>Descartar Carta 1</button>
+              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [1])}>Descartar Carta 2</button>
+              <button onClick={() => discardCards(players.findIndex(p => p.name === playerName), [0, 1])}>Descartar Ambas</button>
+              <button onClick={() => pasarDescartes(players.findIndex(p => p.name === playerName))}>Pasar</button>
             </div>
           )}
-
-          {
-            (() => {
-              const playerIndex = players.findIndex(p => p.name === playerName);
-              return !jugadoresActivos[playerIndex] && <p style={{ color: 'red' }}>Retirado</p>;
-            })()
-          }
         </div>
       </div>
 
@@ -218,7 +200,6 @@ function App() {
       )}
 
       {ganador && <h2>{ganador}</h2>}
-      {ganador && <button onClick={() => socket.emit('join-room', { roomId: 'sala-busle', name: playerName })}>Jugar de Nuevo</button>}
     </div>
   );
 }

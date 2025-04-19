@@ -27,6 +27,8 @@ function startGame(roomId) {
   room.fase = 'apuestas';
   room.acciones = Array(room.players.length).fill(null);
 
+  console.log(`🎮 Iniciando juego en sala ${roomId} con ${room.players.length} jugadores`);
+
   io.to(roomId).emit('game-started', {
     players,
     communityCards,
@@ -38,9 +40,11 @@ function startGame(roomId) {
 }
 
 io.on('connection', (socket) => {
-  console.log('Cliente conectado:', socket.id);
+  console.log('✅ Cliente conectado:', socket.id);
 
   socket.on('join-room', ({ roomId, name }) => {
+    console.log(`📥 ${name} intentando entrar a ${roomId}`);
+
     if (!rooms[roomId]) {
       rooms[roomId] = {
         players: [],
@@ -56,6 +60,7 @@ io.on('connection', (socket) => {
 
     if (room.players.length >= 2) {
       socket.emit('room-full');
+      console.log(`🚫 Sala ${roomId} llena`);
       return;
     }
 
@@ -65,6 +70,7 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     io.to(roomId).emit('room-update', room);
+    console.log(`👥 Sala ${roomId} ahora tiene ${room.players.length} jugador(es)`);
 
     if (room.players.length === 2) {
       startGame(roomId);
@@ -72,7 +78,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('Cliente desconectado:', socket.id);
+    console.log('❌ Cliente desconectado:', socket.id);
     for (const roomId in rooms) {
       const room = rooms[roomId];
       room.players = room.players.filter(p => p.id !== socket.id);
@@ -83,5 +89,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
