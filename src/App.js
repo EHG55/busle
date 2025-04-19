@@ -57,6 +57,7 @@ function App() {
 
     socket.on('room-update', (roomState) => {
       console.log('Estado actualizado:', roomState);
+      setPlayers(roomState.players || []);
     });
 
     return () => {
