@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
@@ -5,10 +6,10 @@ import Player from './components/Player';
 import Table from './components/Table';
 import { evaluateHand } from './utils/combinations';
 
-const playerName = prompt("Ingresa tu nombre:") || 'Jugador';
 const socket = io('http://localhost:4000');
 
 function App() {
+  const [playerName, setPlayerName] = useState('');
   const [deck, setDeck] = useState([]);
   const [players, setPlayers] = useState([]);
   const [tableCards, setTableCards] = useState([]);
@@ -16,15 +17,28 @@ function App() {
   const [turnoActual, setTurnoActual] = useState(0);
   const [acciones, setAcciones] = useState([null, null, null]);
   const [jugadoresActivos, setJugadoresActivos] = useState([true, true, true]);
-  const [fase, setFase] = useState('apuestas');
+  const [fase, setFase] = useState('esperando');
   const [descartesUsados, setDescartesUsados] = useState([false, false, false]);
   const [ganador, setGanador] = useState(null);
   const [jugadorQueAposto, setJugadorQueAposto] = useState(null);
   const [pendientesPorResponder, setPendientesPorResponder] = useState([0, 1, 2]);
 
   useEffect(() => {
-    socket.emit('join-room', { roomId: 'sala-busle', name: playerName });
+    if (window.Telegram) {
+      const tg = window.Telegram.WebApp;
+      tg.expand();
 
+      if (tg.initDataUnsafe?.user) {
+        const nombre = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name;
+        setPlayerName(nombre);
+        socket.emit('join-room', { roomId: 'sala-busle', name: nombre });
+      } else {
+        console.log("No se detectó usuario de Telegram");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     socket.on('game-started', (roomState) => {
       const { players: manos, communityCards: comunes, deck: mazoRestante } = roomState;
       setDeck(mazoRestante);
@@ -54,7 +68,7 @@ function App() {
     const playerIndex = players.findIndex(p => p.name === playerName);
     if (playerIndex === -1) return;
     socket.emit('player-action', { roomId: 'sala-busle', playerId: playerIndex, action: tipo });
-};
+  };
 
   const discardCards = (index, indices) => {
     if (fase !== 'descartes' || descartesUsados[index] || !jugadoresActivos[index]) return;
@@ -109,7 +123,7 @@ function App() {
     setGanador(`Ganador: Jugador ${ganadorIndex + 1} con ${mejor.name}`);
   };
 
-  if (players.length !== 3) return <div className="App"><h2>Esperando jugadores... ({players.length}/3)</h2></div>;
+  if (players.length < 2) return <div className="App"><h2>Esperando jugadores... ({players.length}/2)</h2></div>;
 
   return (
     <div className="App">
