@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     io.to(roomId).emit('room-update', room);
 
-    if (room.players.length >= 2 && room.players.length <= 3) {
+    if (room.players.length === 2) {
       startGame(roomId);
     }
   });

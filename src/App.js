@@ -15,13 +15,13 @@ function App() {
   const [tableCards, setTableCards] = useState([]);
   const [round, setRound] = useState(1);
   const [turnoActual, setTurnoActual] = useState(0);
-  const [acciones, setAcciones] = useState([null, null, null]);
-  const [jugadoresActivos, setJugadoresActivos] = useState([true, true, true]);
+  const [acciones, setAcciones] = useState([null, null]);
+  const [jugadoresActivos, setJugadoresActivos] = useState([true, true]);
   const [fase, setFase] = useState('esperando');
-  const [descartesUsados, setDescartesUsados] = useState([false, false, false]);
+  const [descartesUsados, setDescartesUsados] = useState([false, false]);
   const [ganador, setGanador] = useState(null);
   const [jugadorQueAposto, setJugadorQueAposto] = useState(null);
-  const [pendientesPorResponder, setPendientesPorResponder] = useState([0, 1, 2]);
+  const [pendientesPorResponder, setPendientesPorResponder] = useState([0, 1]);
 
   useEffect(() => {
     if (window.Telegram) {
@@ -52,13 +52,13 @@ function App() {
       setTableCards(comunes);
       setRound(1);
       setTurnoActual(roomState.turnoActual || 0);
-      setAcciones([null, null, null]);
-      setJugadoresActivos([true, true, true]);
-      setDescartesUsados([false, false, false]);
+      setAcciones([null, null]);
+      setJugadoresActivos([true, true]);
+      setDescartesUsados([false, false]);
       setFase('apuestas');
       setGanador(null);
       setJugadorQueAposto(null);
-      setPendientesPorResponder([0, 1, 2]);
+      setPendientesPorResponder([0, 1]);
     });
 
     socket.on('room-update', (roomState) => {
