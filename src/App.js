@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
@@ -42,6 +41,7 @@ function App() {
 
   useEffect(() => {
     socket.on('game-started', (roomState) => {
+      console.log("🚀 GAME STARTED", roomState);
       const { players: manos, communityCards: comunes, deck: mazoRestante } = roomState;
       setDeck(mazoRestante);
       setPlayers(manos);
@@ -81,7 +81,7 @@ function App() {
       <div className="mesa">
         <div className="jugador jugador2">
           <h3>Jugador 2</h3>
-          <Player cards={players[1]} playerNumber={2} />
+          {players[1] && <Player cards={players[1]} playerNumber={2} />}
         </div>
 
         <div className="cartas-comunes">
@@ -90,7 +90,7 @@ function App() {
 
         <div className="jugador jugador1">
           <h3>{playerName}</h3>
-          <Player cards={players[0]} playerNumber={1} />
+          {players[0] && <Player cards={players[0]} playerNumber={1} />}
         </div>
       </div>
       {ganador && <h2>{ganador}</h2>}
