@@ -6,11 +6,8 @@ import Player from './components/Player';
 import Table from './components/Table';
 import { evaluateHand } from './utils/combinations';
 
-const socket = io(
-  window.location.hostname.includes('vercel.app') || window.location.hostname.includes('busle.vercel.app')
-    ? 'https://busle.onrender.com'
-    : 'http://localhost:4000'
-);
+const socket = io('https://busle.onrender.com');
+
 
 function App() {
   const [playerName, setPlayerName] = useState('');
