@@ -58,7 +58,7 @@ function App() {
     });
 
     socket.on('room-update', (roomState) => {
-      console.log('Estado actualizado:', roomState);
+      console.log('📡 Estado actualizado:', roomState);
       setPlayers(roomState.players || []);
     });
 
@@ -66,6 +66,12 @@ function App() {
       socket.disconnect();
     };
   }, []);
+
+  const hacerAccion = (tipo) => {
+    const playerIndex = players.findIndex(p => p.name === playerName);
+    if (playerIndex === -1) return;
+    socket.emit('player-action', { roomId: 'sala-busle', playerId: playerIndex, action: tipo });
+  };
 
   if (players.length < 2) {
     return (
@@ -95,12 +101,15 @@ function App() {
         <div className="jugador jugador1">
           <h3>{playerName}</h3>
           {players[0]?.hand?.length === 2 && <Player cards={players[0].hand} playerNumber={1} />}
+
+          <div className="botones">
+            {!acciones.includes('apostó') && <button onClick={() => hacerAccion('pasó')}>Pasar</button>}
+            <button onClick={() => hacerAccion('apostó')}>Apostar</button>
+            {acciones.includes('apostó') && <button onClick={() => hacerAccion('igualó')}>Igualar</button>}
+            <button onClick={() => hacerAccion('retirado')}>Retirarse</button>
+          </div>
         </div>
       </div>
-
-      <pre style={{ textAlign: 'left', padding: '1em', fontSize: '0.8em', background: '#f0f0f0', borderRadius: '8px' }}>
-        {JSON.stringify(players, null, 2)}
-      </pre>
 
       {ganador && <h2>{ganador}</h2>}
     </div>
