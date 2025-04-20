@@ -97,7 +97,11 @@ function App() {
           {players[0]?.hand?.length === 2 && <Player cards={players[0].hand} playerNumber={1} />}
         </div>
       </div>
-      <pre style={{ textAlign: 'left', padding: '1em' }}>{JSON.stringify(players, null, 2)}</pre>
+
+      <pre style={{ textAlign: 'left', padding: '1em', fontSize: '0.8em', background: '#f0f0f0', borderRadius: '8px' }}>
+        {JSON.stringify(players, null, 2)}
+      </pre>
+
       {ganador && <h2>{ganador}</h2>}
     </div>
   );
